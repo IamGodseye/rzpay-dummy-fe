@@ -1,27 +1,40 @@
 import TshirtImg from "./tshirt.svg";
+import { useState } from "react";
 
 function Product() {
-  const amount = 500;
+  const [amount, setAmount] = useState(500);
+  const [inputAmount, setInputAmount] = useState(amount);
+
+  const handleAmountChange = (e) => {
+    setInputAmount(e.target.value);
+  };
+
+  const handleSubmit = () => {
+    setAmount(Number(inputAmount));
+  };
   const currency = "INR";
   const receiptId = "qwsaq1";
 
   const paymentHandler = async (e) => {
-    const response = await fetch("http://localhost:5000/order", {
+    // TODO: change to backend endpoint with orgId 
+    const response = await fetch("http://localhost:3000/wallets/d7cb832c-3971-4188-981d-f752dd17c91b/create-order", {
       method: "POST",
       body: JSON.stringify({
         amount,
         currency,
-        receipt: receiptId,
+        // receipt: receiptId,
       }),
       headers: {
         "Content-Type": "application/json",
       },
     });
-    const order = await response.json();
+    const { data } = await response.json();
+    const { order } = data;
     console.log(order);
 
     var options = {
-      key: "rzp_test_ghTeekIY3ZvfG3", // Enter the Key ID generated from the Dashboard
+      // TODO: change this key to the one from the backend
+      key: "rzp_test_UAqm8vLyBahjzw", // Enter the Key ID generated from the Dashboard
       amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
       currency,
       name: "Acme Corp", //your business name
@@ -29,15 +42,21 @@ function Product() {
       image: "https://example.com/your_logo",
       order_id: order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
       handler: async function (response) {
+        console.log(response);
         const body = {
           ...response,
         };
 
         const validateRes = await fetch(
-          "http://localhost:5000/order/validate",
+          // TODO: check this endpoint with backend
+          "http://localhost:3000/wallets/verify-payment",
           {
             method: "POST",
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            }),
             headers: {
               "Content-Type": "application/json",
             },
@@ -77,7 +96,20 @@ function Product() {
     <div className="product">
       <h2>Tshirt</h2>
       <p>Solid blue cotton Tshirt</p>
-      <img src={TshirtImg} />
+      <img src={TshirtImg} alt="Tshirt" />
+      <br />
+      <div>
+        <label htmlFor="amount">Enter Amount: </label>
+        <input
+          type="number"
+          id="amount"
+          name="amount"
+          min="1"
+          step="1"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </div>
       <br />
       <button onClick={paymentHandler}>Pay</button>
     </div>
